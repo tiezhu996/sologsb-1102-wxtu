@@ -39,6 +39,7 @@ docker compose up -d --build
 | 剧目库 | 新建剧目、按剧种（传统折子/新编）与状态（筹备中/排练中/可上演）筛选，环形指示展示平均排练成熟度 |
 | 场次拆分 | 场序表拖拽调序（自动重排并落库）、按场次勾选「本次排练覆盖范围」、左右相邻场次合计时长参考 |
 | 角色指派 | 登记全场影人角色（行当 / 需备影件 / 出场提示 / 唱白要点），为每个角色指派操耍人 |
+| 影件备料单 | 出远门备料一剧一单：同名角色跨场合一件（件数按同场同时上场的最大套数计），按头茬 / 身段 / 兵器分组写明角色与件数，可复制文本 / 导出 CSV；改名、调件、撤场撤角后重载即重算 |
 | 锣鼓点时间轴 | 按秒点插入急急风/四击头/水底鱼，选主奏乐器与领奏操耍人，刻度尺可点击定位、可试排播放 |
 | 操耍人档 | 维护技能标签（签子/连本/武打）与冲突时段，查看每人已派角色与累计排练时长，两两时段冲突对比 |
 
@@ -91,9 +92,9 @@ sologsb-1102/
         ├── stores/             # playStore.ts sceneStore.ts operatorStore.ts（Zustand）
         ├── components/common/  # SceneCard.tsx AssigneePicker.tsx ProgressRing.tsx EmptyState.tsx
         ├── hooks/              # useSceneOrder.ts useOperatorConflict.ts
-        ├── pages/              # PlayList.tsx SceneBoard.tsx RoleAssign.tsx CueTimeline.tsx OperatorList.tsx
+        ├── pages/              # PlayList.tsx SceneBoard.tsx PropManifest.tsx RoleAssign.tsx CueTimeline.tsx OperatorList.tsx
         ├── router/             # index.tsx（路由表 + 懒加载分包）
-        ├── utils/              # timecode.ts db.ts export.ts（另有 localStore/seed/uuid 辅助）
+        ├── utils/              # timecode.ts db.ts export.ts propManifest.ts（另有 localStore/seed/uuid 辅助）
         ├── styles/main.css     # 皮影暖纸底主题样式
         ├── App.tsx             # 布局与外层导航
         └── main.tsx            # 入口：ConfigProvider(zh_CN) + RouterProvider
@@ -105,6 +106,7 @@ sologsb-1102/
 | --- | --- | --- |
 | `/plays` | 剧目库 | Play |
 | `/plays/:id/scenes` | 场次拆分与调序 | Scene、Play |
+| `/plays/:id/props` | 影件备料单 | Scene、ShadowRole |
 | `/scenes/:id/roles` | 角色与操耍人指派 | ShadowRole、Operator |
 | `/scenes/:id/cues` | 锣鼓点时间轴 | PercussionCue、Scene |
 | `/operators` | 操耍人档与时段冲突 | Operator |
@@ -126,8 +128,16 @@ sologsb-1102/
 - **IndexedDB（Dexie）**：`src/utils/db.ts` 封装全部读写，数据库名 `gbshadowplay`，当前结构版本 **2**，并在 `version(2).upgrade()` 中提供升级迁移逻辑（补齐 `revision` 行修订号、兜底 `createdAt/updatedAt`）。
 - **localStorage**：`src/utils/localStore.ts` 统一封装界面偏好（最近打开的剧目、场次页「只看本次勾选」开关等）。
 - **首次打开**：数据库为空时自动灌入示例班社数据（3 出剧目 / 6 个场次 / 12 个影人角色 / 4 位操耍人 / 10 处锣鼓点），保证界面开箱即有内容可点。
-- **导入导出**：剧目库支持导出整库 JSON 存档、导入存档覆盖、以及重置为示例数据；操耍人档支持导出 CSV，剧目可导出排练通告 CSV。
+- **导入导出**：剧目库支持导出整库 JSON 存档、导入存档覆盖、以及重置为示例数据；操耍人档支持导出 CSV，剧目可导出排练通告 CSV 与影件备料单 CSV（备料单也可一键复制纯文本发给道具师傅）。
 - **容器无状态**：数据只存在访问者的浏览器里，不使用数据库服务、不挂载命名卷；清除站点数据即等于恢复出厂状态。
+
+### 影件备料单的合算规则
+
+备料单（`src/utils/propManifest.ts` 的纯函数 `buildPropManifest`）每次打开 / 点「重新载入」时从 IndexedDB 重读场次与角色即时派生，不落表、不缓存，因此改名、调整影件、撤场撤角后自然跟着重算：
+
+- 同名角色在多场出现只并成一份；件数按「同一影件类型在单场内被勾选的最大同名行数」计——跨场复用不重复加件，同场需要同时上多件（如成对龙套）才加件。
+- 按头茬 / 身段 / 兵器固定分组，每组列出角色、件数与出场场次；角色在某场勾了某件而其他场没勾，按并集备一份。
+- 一件未勾的角色单独列在「无需拆件的角色」核对栏，防止配角漏勾。
 
 ---
 

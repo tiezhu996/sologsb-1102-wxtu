@@ -13,6 +13,7 @@ import { ROLE_TYPE_LABEL, PROP_PART_LABEL } from '../types/role';
 import { PLAY_GENRE_LABEL, PLAY_STATUS_LABEL } from '../types/play';
 import { SHADOW_SCREEN_LABEL } from '../types/scene';
 import { SKILL_TAG_LABEL, minuteToClock, WEEKDAY_LABEL } from '../types/operator';
+import type { PropManifest } from './propManifest';
 
 /** 触发浏览器下载 */
 function download(filename: string, content: string, mime: string): void {
@@ -184,6 +185,81 @@ export async function copyText(text: string): Promise<boolean> {
     return false;
   }
   return false;
+}
+
+/** 备料单里一个角色的出场场次串，如「第1场 游湖、第3场 水漫（同场×2）」 */
+function manifestSceneText(entry: PropManifest['entries'][number], separator: string): string {
+  return entry.sceneRefs
+    .map((ref) => `第${ref.seq}场 ${ref.title}${ref.appearances > 1 ? `（同场×${ref.appearances}）` : ''}`)
+    .join(separator);
+}
+
+/** 生成可复制的影件备料单纯文本（同名角色已跨场合并） */
+export function buildPropManifestText(play: Play, manifest: PropManifest): string {
+  const lines: string[] = [];
+  const summary = manifest.groups.map((group) => `${PROP_PART_LABEL[group.part]} ${group.pieceCount} 件`).join('｜');
+  lines.push(`【${play.title}】影件备料单（出场角色 ${manifest.roleCount} 个 · 合计 ${manifest.totalPieces} 件）`);
+  lines.push(summary);
+  lines.push('');
+  manifest.groups.forEach((group) => {
+    lines.push(`■ ${PROP_PART_LABEL[group.part]}（${group.pieceCount} 件）`);
+    if (group.roles.length === 0) lines.push('  · 无');
+    group.roles.forEach((entry) => {
+      const reuse = entry.sceneRefs.length > 1 ? `｜跨${entry.sceneRefs.length}场复用` : '';
+      lines.push(
+        `  · ${entry.name}（${ROLE_TYPE_LABEL[entry.roleType]}）×${entry.partCounts[group.part]}${reuse}｜出场：${manifestSceneText(entry, '、')}`,
+      );
+    });
+  });
+  lines.push('');
+  if (manifest.idleRoles.length > 0) {
+    lines.push(`■ 无需拆件角色（${manifest.idleRoles.length} 个，请核对是否漏勾影件）`);
+    manifest.idleRoles.forEach((entry) => {
+      lines.push(`  · ${entry.name}（${ROLE_TYPE_LABEL[entry.roleType]}）｜出场：${manifestSceneText(entry, '、')}`);
+    });
+  } else {
+    lines.push('■ 无需拆件角色：无');
+  }
+  return lines.join('\n');
+}
+
+/** 影件备料单导出为 CSV（按影件类型分组，同名角色一行） */
+export function exportPropManifestCsvFile(play: Play, manifest: PropManifest): string {
+  const header = ['影件类型', '角色', '行当', '需备件数', '出场场次'];
+  const lines: string[] = [];
+  lines.push(csvCell(`剧目：${play.title}`));
+  lines.push(
+    csvCell(
+      `合计：${manifest.groups.map((group) => `${PROP_PART_LABEL[group.part]} ${group.pieceCount} 件`).join('｜')}｜共 ${manifest.totalPieces} 件`,
+    ),
+  );
+  lines.push('');
+  lines.push(header.map(csvCell).join(','));
+  manifest.groups.forEach((group) => {
+    group.roles.forEach((entry) => {
+      lines.push(
+        [
+          PROP_PART_LABEL[group.part],
+          entry.name,
+          ROLE_TYPE_LABEL[entry.roleType],
+          entry.partCounts[group.part],
+          manifestSceneText(entry, '；'),
+        ]
+          .map(csvCell)
+          .join(','),
+      );
+    });
+  });
+  manifest.idleRoles.forEach((entry) => {
+    lines.push(
+      ['无需拆件', entry.name, ROLE_TYPE_LABEL[entry.roleType], 0, manifestSceneText(entry, '；')]
+        .map(csvCell)
+        .join(','),
+    );
+  });
+  const filename = `${play.title}-影件备料单-${stampSuffix()}.csv`;
+  download(filename, `\uFEFF${lines.join('\n')}`, 'text/csv;charset=utf-8');
+  return filename;
 }
 
 /** 生成可复制的排练通告纯文本 */

@@ -30,6 +30,7 @@ import {
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
+  ToolOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
 import { ProgressRing } from '../components/common/ProgressRing';
@@ -318,6 +319,19 @@ export default function PlayList() {
                           }}
                         >
                           场次
+                        </Button>
+                      </Tooltip>,
+                      <Tooltip title="影件备料单" key="props">
+                        <Button
+                          type="link"
+                          icon={<ToolOutlined />}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            selectPlay(play.id);
+                            navigate(ROUTES.props(play.id));
+                          }}
+                        >
+                          备料
                         </Button>
                       </Tooltip>,
                       <Tooltip title="编辑剧目" key="edit">

@@ -7,6 +7,7 @@ import {
   ReadOutlined,
   SoundOutlined,
   TeamOutlined,
+  ToolOutlined,
 } from '@ant-design/icons';
 import { ROUTES } from './router';
 import { usePlayStore } from './stores/playStore';
@@ -18,7 +19,10 @@ const { Header, Sider, Content, Footer } = Layout;
 /** 侧边导航：按当前路径高亮，场次/角色/锣鼓点页复用当前剧目上下文 */
 function buildSelectedKey(pathname: string, currentPlayId: string | null): string {
   if (pathname.startsWith('/operators')) return ROUTES.operators;
-  if (pathname.startsWith('/plays/') && currentPlayId) return ROUTES.scenes(currentPlayId);
+  if (pathname.startsWith('/plays/') && currentPlayId) {
+    if (pathname.endsWith('/props')) return ROUTES.props(currentPlayId);
+    return ROUTES.scenes(currentPlayId);
+  }
   return ROUTES.plays;
 }
 
@@ -83,6 +87,12 @@ export default function App() {
                 key: currentPlayId ? ROUTES.scenes(currentPlayId) : 'scenes-disabled',
                 icon: <ReadOutlined />,
                 label: currentPlay ? `场次拆分 · ${currentPlay.title}` : '场次拆分（先选剧目）',
+                disabled: !currentPlayId,
+              },
+              {
+                key: currentPlayId ? ROUTES.props(currentPlayId) : 'props-disabled',
+                icon: <ToolOutlined />,
+                label: currentPlay ? `影件备料单 · ${currentPlay.title}` : '影件备料单（先选剧目）',
                 disabled: !currentPlayId,
               },
               { key: ROUTES.operators, icon: <TeamOutlined />, label: '操耍人档' },
