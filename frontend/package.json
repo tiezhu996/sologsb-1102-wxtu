@@ -8,7 +8,8 @@
     "dev": "vite --host --port 21802",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host --port 21802",
-    "typecheck": "tsc -b --noEmit false"
+    "typecheck": "tsc -b --noEmit false",
+    "test": "vitest run"
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
@@ -26,6 +27,7 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.6.3",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^4.1.11"
   }
 }

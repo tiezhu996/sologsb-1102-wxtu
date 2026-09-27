@@ -30,6 +30,7 @@ import {
   SaveOutlined,
   SoundOutlined,
   TeamOutlined,
+  ToolOutlined,
 } from '@ant-design/icons';
 import { SceneCard } from '../components/common/SceneCard';
 import { EmptyState } from '../components/common/EmptyState';
@@ -188,6 +189,9 @@ export default function SceneBoard() {
           <Space wrap>
             <Button icon={<PlusOutlined />} type="primary" onClick={openCreate}>
               新增场次
+            </Button>
+            <Button icon={<ToolOutlined />} onClick={() => navigate(ROUTES.props(playId))}>
+              影件备料单
             </Button>
             <Button
               icon={<TeamOutlined />}

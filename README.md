@@ -38,6 +38,7 @@ docker compose up -d --build
 | --- | --- |
 | 剧目库 | 新建剧目、按剧种（传统折子/新编）与状态（筹备中/排练中/可上演）筛选，环形指示展示平均排练成熟度 |
 | 场次拆分 | 场序表拖拽调序（自动重排并落库）、按场次勾选「本次排练覆盖范围」、左右相邻场次合计时长参考 |
+| 影件备料单 | 出远门前清点影件：同一角色跨场次并成一份，按头茬/身段/兵器分组写明要备的角色与件数；改名、调件、撤场后自动重算，可导出 CSV / 复制文本 |
 | 角色指派 | 登记全场影人角色（行当 / 需备影件 / 出场提示 / 唱白要点），为每个角色指派操耍人 |
 | 锣鼓点时间轴 | 按秒点插入急急风/四击头/水底鱼，选主奏乐器与领奏操耍人，刻度尺可点击定位、可试排播放 |
 | 操耍人档 | 维护技能标签（签子/连本/武打）与冲突时段，查看每人已派角色与累计排练时长，两两时段冲突对比 |
@@ -68,6 +69,7 @@ cd frontend
 npm install
 npm run dev      # http://localhost:21802
 npm run build    # tsc -b && vite build（类型检查 + 生产构建）
+npm run test     # vitest 单元测试（影件备料单聚合等纯函数）
 npm run preview  # 本地预览构建产物
 ```
 
@@ -91,9 +93,9 @@ sologsb-1102/
         ├── stores/             # playStore.ts sceneStore.ts operatorStore.ts（Zustand）
         ├── components/common/  # SceneCard.tsx AssigneePicker.tsx ProgressRing.tsx EmptyState.tsx
         ├── hooks/              # useSceneOrder.ts useOperatorConflict.ts
-        ├── pages/              # PlayList.tsx SceneBoard.tsx RoleAssign.tsx CueTimeline.tsx OperatorList.tsx
+        ├── pages/              # PlayList.tsx SceneBoard.tsx PropPrepList.tsx RoleAssign.tsx CueTimeline.tsx OperatorList.tsx
         ├── router/             # index.tsx（路由表 + 懒加载分包）
-        ├── utils/              # timecode.ts db.ts export.ts（另有 localStore/seed/uuid 辅助）
+        ├── utils/              # timecode.ts db.ts export.ts propPrep.ts（另有 localStore/seed/uuid 辅助）
         ├── styles/main.css     # 皮影暖纸底主题样式
         ├── App.tsx             # 布局与外层导航
         └── main.tsx            # 入口：ConfigProvider(zh_CN) + RouterProvider
@@ -105,6 +107,7 @@ sologsb-1102/
 | --- | --- | --- |
 | `/plays` | 剧目库 | Play |
 | `/plays/:id/scenes` | 场次拆分与调序 | Scene、Play |
+| `/plays/:id/props` | 影件备料单 | ShadowRole、Scene |
 | `/scenes/:id/roles` | 角色与操耍人指派 | ShadowRole、Operator |
 | `/scenes/:id/cues` | 锣鼓点时间轴 | PercussionCue、Scene |
 | `/operators` | 操耍人档与时段冲突 | Operator |
